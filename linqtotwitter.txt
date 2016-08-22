@@ -1,0 +1,62 @@
+public async Task<ActionResult> BeginAsync()
+        {
+            //var auth = new MvcSignInAuthorizer
+            var auth = new MvcAuthorizer
+            {
+                CredentialStore = new SessionStateCredentialStore
+                {
+                    ConsumerKey = ConfigurationManager.AppSettings["	Z62d1OEqoCKBRArJurHphtAHt"],
+                    ConsumerSecret = ConfigurationManager.AppSettings["SXHMYeR3VRAs2kHB0wm8tUbYEKuG2BjzDqXa5M9uJsfrbeThGm"]
+                }
+
+            };
+
+            string twitterCallbackUrl = Request.Url.ToString().Replace("Begin", "Complete");
+
+            return await auth.BeginAuthorizationAsync(new Uri(twitterCallbackUrl));
+        }
+
+        public async Task<ActionResult> CompleteAsync()
+        {
+            var auth = new MvcAuthorizer
+            {
+                CredentialStore = new SessionStateCredentialStore()
+            };
+
+            await auth.CompleteAuthorizeAsync(Request.Url);
+
+            return RedirectToAction("Index", "Home");
+        }
+
+
+        [HttpGet]
+        public ActionResult getTweets(ViewTweetsModel model)
+        {
+            return View();
+        }
+
+        //exception handling needs be added for if user isn't authenticated!
+        //or add an if else to check authentication
+        [HttpPost]
+        [ActionName("Tweet")]
+        public async Task<ActionResult> TweetAsync(SendTweetModel tweet)
+        {
+
+            var auth = new MvcAuthorizer
+            {
+                CredentialStore = new SessionStateCredentialStore()
+            };
+
+         
+            var ctx = new TwitterContext(auth);
+
+            Status responseTweet = await ctx.TweetAsync(tweet.Text);
+
+            var responseTweetVM = new SendTweetModel
+            {
+                Text = "Testing async LINQ to Twitter in MVC - " + DateTime.Now.ToString(),
+                Response = "Tweet successful! Response from Twitter: " + responseTweet.Text
+            };
+
+            return View(responseTweetVM);
+        }
